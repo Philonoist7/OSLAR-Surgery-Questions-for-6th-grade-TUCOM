@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSLER Study Guide</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Link to your JavaScript file. 'defer' ensures it runs after the HTML is parsed. -->
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+    <!-- Floating Navigation Sidebar -->
+    <nav class="sidebar">
+        <h2 class="sidebar-title">Navigation</h2>
+        <div class="sidebar-nav">
+            <ul>
+                <li><a href="#gen-surg">General Surgery</a></li>
+                <li><a href="#ortho">Orthopedics</a></li>
+                <li><a href="#cardio">Cardiothoracic/Vascular</a></li>
+                <li><a href="#neuro">Neurosurgery</a></li>
+                <li><a href="#plastic">Plastic Surgery</a></li>
+                <li><a href="#urology">Urology</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1>Advanced OSLER Study Guide</h1>
+                <button id="clearNotesBtn" title="Clear all saved notes">Clear All Notes</button>
+            </div>
+            <input type="text" id="searchInput" placeholder="Type to search questions, topics, or doctors...">
+        </header>
+
+        <main id="questionsContainer">
+            <!-- Sections will be dynamically populated by script.js -->
+            <section id="gen-surg" class="specialty-section"></section>
+            <section id="ortho" class="specialty-section"></section>
+            <section id="cardio" class="specialty-section"></section>
+            <section id="neuro" class="specialty-section"></section>
+            <section id="plastic" class="specialty-section"></section>
+            <section id="urology" class="specialty-section"></section>
+        </main>
+    </div>
+
+    <button id="backToTopBtn" title="Back to Top">↑</button>
+
+</body>
+</html>

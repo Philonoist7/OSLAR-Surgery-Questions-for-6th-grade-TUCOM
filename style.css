@@ -1,0 +1,283 @@
+/* --- Global Styles & Dark Mode Theme --- */
+:root {
+    --bg-color: #121212;
+    --surface-color: #1e1e1e;
+    --surface-hover: #2a2a2a;
+    --primary-text-color: #e0e0e0;
+    --secondary-text-color: #a0a0a0;
+    --border-color: #383838;
+    --accent-color: #4dabf7; /* A lighter, more pleasant blue */
+    --accent-hover-color: #1c7ed6;
+    --shadow-color: rgba(77, 171, 247, 0.2);
+    --icon-color: #bb86fc;
+    --highlight-bg: #fcc419;
+    --highlight-text: #000;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--primary-text-color);
+    line-height: 1.7;
+    padding-left: 240px; /* Space for the fixed sidebar */
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* --- Floating Navigation Sidebar --- */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 240px;
+    background-color: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    overflow-y: auto;
+}
+.sidebar-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--primary-text-color);
+}
+.sidebar-nav ul {
+    list-style-type: none;
+}
+.sidebar-nav a {
+    display: block;
+    color: var(--secondary-text-color);
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: background-color 0.2s, color 0.2s;
+}
+.sidebar-nav a:hover {
+    background-color: var(--surface-hover);
+    color: var(--primary-text-color);
+}
+
+/* --- Header & Search Bar --- */
+header {
+    margin-bottom: 40px;
+}
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+h1 {
+    color: var(--primary-text-color);
+    font-weight: 600;
+}
+#clearNotesBtn {
+    background-color: #c92a2a;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+#clearNotesBtn:hover {
+    background-color: #a61e1e;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    background-color: var(--surface-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+#searchInput:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px var(--shadow-color);
+}
+
+/* --- Question Sections & Cards --- */
+.specialty-section {
+    margin-bottom: 50px;
+    padding-top: 20px; /* Offset for anchor links */
+}
+.specialty-section h2 {
+    font-size: 2em;
+    color: var(--primary-text-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+}
+.specialty-section h3, .specialty-section h4 {
+    font-size: 1.4em;
+    color: var(--primary-text-color);
+    margin-top: 40px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--icon-color);
+    padding-left: 15px;
+}
+.specialty-section h4 {
+    font-size: 1.2em;
+    margin-top: 30px;
+    margin-left: 10px;
+    border-left-color: #74c0fc;
+}
+
+.question-card {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden; /* Important for collapsible animation */
+}
+.question-header {
+    padding: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.question-card.active .question-header,
+.question-header:hover {
+    background-color: var(--surface-hover);
+}
+.question-text {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+.doctors {
+    font-style: italic;
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+}
+.answer-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+    padding: 0 20px;
+}
+.question-card.active .answer-content {
+    max-height: 1000px; /* Large enough value */
+    padding: 0 20px 20px 20px;
+    transition: max-height 0.5s ease-in, padding 0.5s ease-in;
+}
+.note-box {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    font-size: 1em;
+    background-color: var(--bg-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+}
+.note-box:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+.case-header {
+    font-weight: bold;
+    color: var(--icon-color);
+    margin-bottom: 10px;
+}
+
+/* Search Highlight */
+mark {
+    background-color: var(--highlight-bg);
+    color: var(--highlight-text);
+    padding: 1px 2px;
+    border-radius: 3px;
+}
+
+/* --- Utility Classes --- */
+#backToTopBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    cursor: pointer;
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    transform: translateY(10px);
+}
+#backToTopBtn.show {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --- Responsive & Print Styles --- */
+@media (max-width: 1200px) {
+    body { padding-left: 0; }
+    .sidebar { display: none; }
+    .container { padding: 20px; }
+}
+
+@media print {
+    body {
+        padding-left: 0;
+        background-color: #fff;
+        color: #000;
+    }
+    .sidebar, header, #backToTopBtn {
+        display: none;
+    }
+    .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    .specialty-section {
+        padding-top: 0;
+        page-break-before: always;
+    }
+     .specialty-section:first-child {
+        page-break-before: auto;
+    }
+    .question-card {
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+    .answer-content {
+        max-height: none !important; /* Force show */
+        padding: 0 20px 20px 20px !important;
+        display: block !important;
+    }
+    .note-box {
+        background-color: #f9f9f9;
+        color: #000;
+        border: 1px solid #ddd;
+    }
+    a { text-decoration: none; color: inherit; }
+}
