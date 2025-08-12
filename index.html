@@ -13,22 +13,20 @@
     <!-- Link to your CSS file -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Link to your JavaScript file. 'defer' ensures it runs after the HTML is parsed. -->
-    <script src="script.js" defer></script>
+    <!-- IMPORTANT: Load questions first, then the main script -->
+    <script src="questions.js" defer></script>
+    <script src="main.js" defer></script>
 </head>
 <body>
 
+    <div id="overlay"></div>
+
     <!-- Floating Navigation Sidebar -->
     <nav class="sidebar">
-        <h2 class="sidebar-title">Navigation</h2>
+        <h2 class="sidebar-title">Surgical Topics</h2>
         <div class="sidebar-nav">
             <ul>
-                <li><a href="#gen-surg">General Surgery</a></li>
-                <li><a href="#ortho">Orthopedics</a></li>
-                <li><a href="#cardio">Cardiothoracic/Vascular</a></li>
-                <li><a href="#neuro">Neurosurgery</a></li>
-                <li><a href="#plastic">Plastic Surgery</a></li>
-                <li><a href="#urology">Urology</a></li>
+                <!-- Dynamically populated by main.js -->
             </ul>
         </div>
     </nav>
@@ -36,20 +34,26 @@
     <div class="container">
         <header>
             <div class="header-top">
-                <h1>Advanced OSLER Study Guide</h1>
-                <button id="clearNotesBtn" title="Clear all saved notes">Clear All Notes</button>
+                <button id="menuToggle" aria-label="Open Menu">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </button>
+                <h1>OSLER Questions</h1>
+                <div class="header-buttons">
+                    <button id="exportAllBtn" title="Export all notes to a file">Export All</button>
+                    <button id="importAllBtn" title="Import notes from a file">Import All</button>
+                    <button id="toggleAllBtn" title="Expand/Collapse All Topics">Toggle All</button>
+                    <button id="clearNotesBtn" title="Clear all saved notes">Clear All</button>
+                </div>
             </div>
-            <input type="text" id="searchInput" placeholder="Type to search questions, topics, or doctors...">
+            <input type="text" id="searchInput" placeholder="Type to search questions or topics...">
+            <!-- Hidden file input for all import functionality -->
+            <input type="file" id="importFileInput" style="display: none;" accept=".json">
         </header>
 
         <main id="questionsContainer">
-            <!-- Sections will be dynamically populated by script.js -->
-            <section id="gen-surg" class="specialty-section"></section>
-            <section id="ortho" class="specialty-section"></section>
-            <section id="cardio" class="specialty-section"></section>
-            <section id="neuro" class="specialty-section"></section>
-            <section id="plastic" class="specialty-section"></section>
-            <section id="urology" class="specialty-section"></section>
+            <!-- Sections and their topic-specific buttons will be dynamically populated by main.js -->
         </main>
     </div>
 
