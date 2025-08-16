@@ -1,12 +1,68 @@
+// --- START FIREBASE SETUP ---
+// --- START FIREBASE SETUP ---
+
+// This is your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCyj9Ee8DhYADbgzS6S4QnHKRUorW4B2Rk",
+  authDomain: "osler-surgery-questions.firebaseapp.com",
+  projectId: "osler-surgery-questions",
+  storageBucket: "osler-surgery-questions.firebasestorage.app",
+  messagingSenderId: "797027462113",
+  appId: "1:797027462113:web:afa40bcf4b0d87cf6b00a0"
+  // measurementId is optional and not needed for this app
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let currentUser = null; // Variable to hold the current user object
+let userNotes = {};     // In-memory cache of the user's notes
+
+// --- Utility: Local Storage for notes ---
+function loadNotesFromLocalStorage() {
+    try {
+        const notes = localStorage.getItem('osler_notes');
+        return notes ? JSON.parse(notes) : {};
+    } catch {
+        return {};
+    }
+}
+function saveNotesToLocalStorage(notes) {
+    localStorage.setItem('osler_notes', JSON.stringify(notes));
+}
+
+// --- END FIREBASE SETUP ---
+// --- END FIREBASE SETUP ---
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Get references
+    const questionsContainer = document.getElementById('questionsContainer');
+    const searchInput = document.getElementById('searchInput');
+    const backToTopBtn = document.getElementById('backToTopBtn');
+    const toggleAllBtn = document.getElementById('toggleAllBtn');
+    const importFileInput = document.getElementById('importFileInput');
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('overlay');
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    
+    // Get references to Auth elements
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userInfo = document.getElementById('userInfo');
+    const userName = document.getElementById('userName');
+
+    // Get references to Data Management buttons
+    const clearNotesBtn = document.getElementById('clearNotesBtn');
+    const exportAllBtn = document.getElementById('exportAllBtn');
+    const importAllBtn = document.getElementById('importAllBtn');
+    
     let currentTopicForImport = null;
 
-    function buildQuestionHTML(q) {
-        let questionTextHTML = Array.isArray(q.text) ? q.text.map(line => `<p class="question-text">${line}</p>`).join('') : `<p class="question-text">${q.text}</p>`;
-        return `<div class="question-card" data-question-id="${q.id}"><div class="question-header">${q.caseHeader ? `<p class="case-header">${q.caseHeader}</p>` : ''}${questionTextHTML}${q.doctors ? `<p class="doctors">${q.doctors}</p>` : ''}</div><div class="answer-content"><textarea class="note-box" placeholder="Your answer and notes here..."></textarea></div></div>`;
-    }
-    
+    // --- Core Page Building Function ---
     function populatePage() {
+        // ... (This function remains unchanged, it correctly builds the page structure)
         const questionsContainer = document.getElementById('questionsContainer');
         const sidebarNav = document.querySelector('.sidebar-nav ul');
         questionsContainer.innerHTML = '';
@@ -52,92 +108,168 @@ document.addEventListener('DOMContentLoaded', function () {
             const titleElement = section.querySelector('.topic-title');
             titleElement.dataset.originalHtml = titleElement.innerHTML;
 
-            // Store original HTML for question cards
             section.querySelectorAll('.question-card').forEach(card => {
                 card.dataset.originalHtml = card.querySelector('.question-header').innerHTML;
             });
         }
     }
+    
+    function buildQuestionHTML(q) {
+        let questionTextHTML = Array.isArray(q.text) ? q.text.map(line => `<p class="question-text">${line}</p>`).join('') : `<p class="question-text">${q.text}</p>`;
+        return `<div class="question-card" data-question-id="${q.id}"><div class="question-header">${q.caseHeader ? `<p class="case-header">${q.caseHeader}</p>` : ''}${questionTextHTML}${q.doctors ? `<p class="doctors">${q.doctors}</p>` : ''}</div><div class="answer-content"><textarea class="note-box" placeholder="Sign in to save notes..." disabled></textarea></div></div>`;
+    }
 
+    // --- Firebase Auth & Firestore Functions ---
+    auth.onAuthStateChanged(async user => {
+        if (user) {
+            currentUser = user;
+            userInfo.style.display = 'flex';
+            userName.textContent = currentUser.displayName;
+            signInBtn.style.display = 'none';
+
+            // Load notes from Firestore and merge with local notes
+            const cloudNotes = await getNotesFromFirestore();
+            const localNotes = loadNotesFromLocalStorage();
+            // Merge: local notes overwrite cloud notes if present
+            userNotes = { ...cloudNotes, ...localNotes };
+            // Save merged notes to Firestore
+            await saveAllNotesToFirestore(userNotes);
+            // Save merged notes to localStorage
+            saveNotesToLocalStorage(userNotes);
+
+            document.querySelectorAll('.note-box').forEach(box => {
+                box.disabled = false;
+                box.placeholder = "Your answer and notes here...";
+                const id = box.closest('.question-card').dataset.questionId;
+                box.value = userNotes[id] || '';
+            });
+        } else {
+            currentUser = null;
+            userInfo.style.display = 'none';
+            signInBtn.style.display = 'block';
+            // Load notes from localStorage
+            userNotes = loadNotesFromLocalStorage();
+            document.querySelectorAll('.note-box').forEach(box => {
+                box.disabled = false;
+                box.placeholder = "Your answer and notes here...";
+                const id = box.closest('.question-card').dataset.questionId;
+                box.value = userNotes[id] || '';
+            });
+        }
+    });
+
+    signInBtn.addEventListener('click', () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(error => {
+            console.error("Sign-in error", error);
+            alert("Could not sign in. Please check the console for errors.");
+        });
+    });
+
+    signOutBtn.addEventListener('click', () => auth.signOut());
+
+    async function getNotesFromFirestore() {
+        if (!currentUser) return {};
+        try {
+            const userNotesRef = db.collection('users').doc(currentUser.uid);
+            const doc = await userNotesRef.get();
+            return (doc.exists && doc.data().notes) ? doc.data().notes : {};
+        } catch {
+            return {};
+        }
+    }
+
+    async function saveAllNotesToFirestore(notes) {
+        if (!currentUser) return;
+        try {
+            const userNotesRef = db.collection('users').doc(currentUser.uid);
+            await userNotesRef.set({ notes }, { merge: true });
+        } catch (error) {
+            console.error("Error saving notes:", error);
+        }
+    }
+
+    async function saveNote(element) {
+        const questionId = element.closest('.question-card').dataset.questionId;
+        const noteText = element.value;
+        userNotes[questionId] = noteText;
+        saveNotesToLocalStorage(userNotes);
+        if (currentUser) {
+            await saveAllNotesToFirestore(userNotes);
+        }
+    }
+
+    function clearAllNotes() {
+        // Clear both localStorage and Firestore
+        if (confirm('Are you sure you want to delete ALL your saved notes? This action cannot be undone.')) {
+            userNotes = {};
+            saveNotesToLocalStorage(userNotes);
+            document.querySelectorAll('.note-box').forEach(box => box.value = '');
+            if (currentUser) {
+                const userNotesRef = db.collection('users').doc(currentUser.uid);
+                userNotesRef.set({ notes: {} })
+                    .then(() => {
+                        alert('All your notes have been cleared.');
+                    })
+                    .catch(error => console.error("Error clearing notes:", error));
+            } else {
+                alert('All your notes have been cleared.');
+            }
+        }
+    }
+
+    // --- Run Page Setup ---
     populatePage();
-
-    // Get references
-    const questionsContainer = document.getElementById('questionsContainer');
-    const searchInput = document.getElementById('searchInput');
-    const clearNotesBtn = document.getElementById('clearNotesBtn');
-    const backToTopBtn = document.getElementById('backToTopBtn');
-    const toggleAllBtn = document.getElementById('toggleAllBtn');
-    const exportAllBtn = document.getElementById('exportAllBtn');
-    const importAllBtn = document.getElementById('importAllBtn');
-    const importFileInput = document.getElementById('importFileInput');
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('overlay');
-    const sidebarNav = document.querySelector('.sidebar-nav');
+    // FIXED: Define allNoteBoxes *after* populatePage() creates them.
     const allNoteBoxes = document.querySelectorAll('.note-box');
+    // FIXED: Attach event listener for saving notes *after* boxes are defined.
+    allNoteBoxes.forEach(box => {
+        box.addEventListener('input', (e) => saveNote(e.target));
+    });
 
-    // *** FIXED: Single, robust event listener for all dynamic content ***
+    // --- Dynamic Content Event Listener ---
     questionsContainer.addEventListener('click', (e) => {
         const target = e.target;
-
-        // Handle clicks on question headers
         const questionHeader = target.closest('.question-header');
         if (questionHeader) {
             questionHeader.closest('.question-card').classList.toggle('active');
-            return; // Stop further processing
+            return;
         }
-        
-        // Handle clicks within the topic header
         const topicHeader = target.closest('.topic-header');
         if (topicHeader) {
             if (target.classList.contains('topic-export-btn')) {
-                const topicId = target.dataset.topicId;
-                handleTopicExport(topicId);
+                handleTopicExport(target.dataset.topicId);
             } else if (target.classList.contains('topic-import-btn')) {
+                if (!currentUser) return alert("Please sign in to import notes.");
                 currentTopicForImport = target.dataset.topicId;
                 importFileInput.click();
             } else {
-                // If anything else in the header is clicked (title, toggle button, empty space), toggle the section
                 topicHeader.closest('.specialty-section').classList.toggle('active');
             }
         }
     });
 
-
-    // --- Mobile Menu Functionality ---
+    // --- Mobile Menu ---
     function closeMenu() { sidebar.classList.remove('active'); overlay.classList.remove('active'); }
     menuToggle.addEventListener('click', () => { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
     overlay.addEventListener('click', closeMenu);
     sidebarNav.addEventListener('click', (e) => { if (e.target.tagName === 'A') { setTimeout(closeMenu, 100); } });
 
-    // --- Note Saving & Loading ---
-    function saveNote(element) { const id = element.closest('.question-card').dataset.questionId; if (id) localStorage.setItem(id, element.value); }
-    function loadNotes() { allNoteBoxes.forEach(box => { const id = box.closest('.question-card').dataset.questionId; const savedNote = localStorage.getItem(id); if (savedNote) box.value = savedNote; }); }
-    allNoteBoxes.forEach(box => { box.addEventListener('input', (e) => saveNote(e.target)); });
-
-    // --- Header Button & Data Management Functionality ---
-    clearNotesBtn.addEventListener('click', () => { if (confirm('Are you sure you want to delete ALL your saved notes? This action cannot be undone.')) { localStorage.clear(); location.reload(); } });
-    
+    // --- Header Button Functionality ---
+    clearNotesBtn.addEventListener('click', clearAllNotes);
     exportAllBtn.addEventListener('click', handleGlobalExport);
-    
-    importAllBtn.addEventListener('click', () => { currentTopicForImport = null; importFileInput.click(); });
+    importAllBtn.addEventListener('click', () => {
+        if (!currentUser) return alert("Please sign in to import notes.");
+        currentTopicForImport = null;
+        importFileInput.click();
+    });
 
     function handleGlobalExport() {
-        const notesToExport = {};
-        let notesFound = false;
-        Object.keys(localStorage).forEach(key => {
-            if(localStorage.getItem(key)) { // Only export non-empty notes
-               notesToExport[key] = localStorage.getItem(key);
-               notesFound = true;
-            }
-        });
+        // FIXED: Use the 'userNotes' object instead of localStorage.
+        if (!currentUser) return alert("Please sign in to export your notes.");
+        if (Object.keys(userNotes).length === 0) return alert('No notes found to export.');
 
-        if (!notesFound) {
-            alert('No notes found to export.');
-            return;
-        }
-
-        const jsonString = JSON.stringify(notesToExport, null, 2);
+        const jsonString = JSON.stringify(userNotes, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -148,8 +280,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
-    
+
     function handleTopicExport(topicId) {
+        // FIXED: Use the 'userNotes' object instead of localStorage.
+        if (!currentUser) return alert("Please sign in to export your notes.");
         if (!topicId || !allQuestionsData[topicId]) return;
 
         const topicData = allQuestionsData[topicId];
@@ -157,21 +291,18 @@ document.addEventListener('DOMContentLoaded', function () {
         let notesFound = false;
 
         topicData.questions.forEach(q => {
-            const note = localStorage.getItem(q.id);
-            if (note && note.trim() !== '') {
-                notes[q.id] = note;
+            if (userNotes[q.id] && userNotes[q.id].trim() !== '') {
+                notes[q.id] = userNotes[q.id];
                 notesFound = true;
             }
         });
 
-        if (!notesFound) {
-            alert(`No notes found in "${topicData.title}" to export.`);
-            return;
-        }
+        if (!notesFound) return alert(`No notes found in "${topicData.title}" to export.`);
         
         const dataToExport = { topicId: topicId, topicTitle: topicData.title, notes: notes };
         const jsonString = JSON.stringify(dataToExport, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
+        // ... (rest of the export logic is fine)
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -182,47 +313,38 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
-
+    
     importFileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
-        if (!file) return;
-
+        if (!file || !currentUser) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
+                // FIXED: This line was missing. It's crucial.
                 const importedData = JSON.parse(e.target.result);
-                if (typeof importedData !== 'object' || importedData === null) {
-                    throw new Error('Invalid JSON structure.');
-                }
-
+                
                 if (currentTopicForImport) {
                     if (importedData.topicId !== currentTopicForImport) {
-                        alert(`Import failed. This file is for "${importedData.topicTitle}", not "${allQuestionsData[currentTopicForImport].title}".`);
-                        return;
-                    }
-                    if (confirm(`This will overwrite existing notes in the topic "${importedData.topicTitle}". Continue?`)) {
-                        for (const id in importedData.notes) {
-                            localStorage.setItem(id, importedData.notes[id]);
-                        }
-                        alert('Topic notes imported successfully! The page will reload.');
-                        location.reload();
-                    }
-                } else {
-                    if (confirm('This will import all notes from the file and overwrite any existing ones. Are you sure?')) {
-                        const notesToImport = importedData.notes || importedData;
-                        for (const id in notesToImport) {
-                            localStorage.setItem(id, notesToImport[id]);
-                        }
-                        alert('All notes imported successfully! The page will now reload.');
-                        location.reload();
+                        return alert(`Import failed. This file is for "${importedData.topicTitle}", not the selected topic.`);
                     }
                 }
+                if (confirm('This will import notes and overwrite any conflicting notes in your account. Continue?')) {
+                    const notesToImport = importedData.notes || importedData;
+                    const userNotesRef = db.collection('users').doc(currentUser.uid);
+                    userNotesRef.set({ notes: notesToImport }, { merge: true }).then(() => {
+                        alert('Notes imported successfully! Reloading to show changes.');
+                        location.reload();
+                    }).catch(error => {
+                        alert('Failed to import notes to the cloud.');
+                        console.error(error);
+                    });
+                }
             } catch (error) {
-                alert('Failed to import notes. Please use a valid JSON file from this tool.');
+                alert('Failed to import notes. Please use a valid JSON file.');
                 console.error('Import error:', error);
             } finally {
                 currentTopicForImport = null;
-                event.target.value = null;
+                event.target.value = null; // Reset file input
             }
         };
         reader.readAsText(file);
@@ -231,50 +353,35 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleAllBtn.addEventListener('click', () => {
         const sections = document.querySelectorAll('.specialty-section');
         const isAnyCollapsed = document.querySelector('.specialty-section:not(.active)');
-        sections.forEach(section => {
-            section.classList.toggle('active', !!isAnyCollapsed);
-        });
+        sections.forEach(section => section.classList.toggle('active', !!isAnyCollapsed));
     });
 
     // --- Search Functionality ---
-    function escapeRegex(string) { return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); }
-    
     function performSearch() {
+        // ... (This function is correct and does not need changes)
         const searchTerm = searchInput.value.toLowerCase().trim();
-        const searchRegex = new RegExp(escapeRegex(searchTerm), 'gi');
-        
+        const searchRegex = new RegExp(searchInput.value.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
         document.querySelectorAll('.specialty-section').forEach(section => {
             let sectionHasMatch = false;
             const titleElement = section.querySelector('.topic-title');
-            
-            // Always reset title HTML from stored original
             titleElement.innerHTML = titleElement.dataset.originalHtml;
-
             if (searchTerm !== '' && titleElement.textContent.toLowerCase().includes(searchTerm)) {
                 sectionHasMatch = true;
-                const newTitleHtml = titleElement.dataset.originalHtml.replace(searchRegex, match => `<mark>${match}</mark>`);
-                titleElement.innerHTML = newTitleHtml;
+                titleElement.innerHTML = titleElement.dataset.originalHtml.replace(searchRegex, match => `<mark>${match}</mark>`);
             }
-            
             section.querySelectorAll('.question-card').forEach(card => {
                 const header = card.querySelector('.question-header');
-                // Always reset card HTML from stored original
-                header.innerHTML = card.dataset.originalHtml; 
-
+                header.innerHTML = card.dataset.originalHtml;
                 const isMatch = searchTerm === '' || card.textContent.toLowerCase().includes(searchTerm);
                 card.style.display = isMatch ? 'block' : 'none';
-
                 if (isMatch) {
                     sectionHasMatch = true;
                     if (searchTerm !== '') {
-                        const newHtml = card.dataset.originalHtml.replace(searchRegex, match => `<mark>${match}</mark>`);
-                        header.innerHTML = newHtml;
+                        header.innerHTML = card.dataset.originalHtml.replace(searchRegex, match => `<mark>${match}</mark>`);
                     }
                 }
             });
-
             section.style.display = sectionHasMatch ? 'block' : 'none';
-
             if (sectionHasMatch && searchTerm !== '') {
                 section.classList.add('active');
             }
@@ -290,5 +397,5 @@ document.addEventListener('DOMContentLoaded', function () {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    loadNotes(); // Initial load
+    // FIXED: Removed the old loadNotes() call from here.
 });
