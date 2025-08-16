@@ -31,7 +31,7 @@ body {
 
 .container { max-width: 900px; margin: 0 auto; padding: 20px 15px; }
 
-/* --- Mobile Menu & Overlay (Unchanged) --- */
+/* --- Mobile Menu & Overlay --- */
 #menuToggle { display: flex; flex-direction: column; justify-content: space-around; width: 30px; height: 25px; background: transparent; border: none; cursor: pointer; padding: 0; z-index: 2001; }
 #menuToggle .bar { width: 100%; height: 3px; background-color: var(--primary-text-color); border-radius: 10px; transition: all 0.3s ease-in-out; }
 #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 1999; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
@@ -43,109 +43,169 @@ body {
 .sidebar-nav a { display: block; color: var(--secondary-text-color); text-decoration: none; padding: 8px 10px; border-radius: 6px; font-size: 0.9em; transition: background-color 0.2s, color 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sidebar-nav a:hover { background-color: var(--surface-hover); color: var(--primary-text-color); }
 
-/* --- Header & Search Bar (Unchanged) --- */
+/* --- Header & Search Bar --- */
 header { margin-bottom: 30px; }
 .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; }
 h1 { color: var(--primary-text-color); font-weight: 600; font-size: 1.5em; order: -1; flex-grow: 1; text-align: center; }
 .header-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; }
-#exportAllBtn, #importAllBtn, #toggleAllBtn, #clearNotesBtn { background-color: var(--surface-hover); color: var(--primary-text-color); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s, border-color 0.2s, color 0.2s; white-space: nowrap; }
-#exportAllBtn { background-color: var(--success-color); border-color: var(--success-color); color: white; }
+
+/* --- IMPROVED: Modern, consistent style for ALL header buttons --- */
+#exportAllBtn, #importAllBtn, #toggleAllBtn, #clearNotesBtn, #signInBtn, #signOutBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px; /* Smaller vertical and horizontal padding */
+    border-radius: 6px;
+    border: 1px solid; /* Use solid border for all */
+    border-bottom-width: 3px; /* Creates the 3D effect */
+    background-color: var(--surface-hover);
+    color: var(--primary-text-color);
+    cursor: pointer;
+    font-size: 0.85em; /* Slightly smaller text */
+    height: 32px;
+    min-height: 32px;  /* Ensures consistent height */
+    font-family: inherit;
+    font-weight: 600; /* Bolder for better readability */
+    transition: transform 0.1s ease-out, background-color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+}
+
+/* Add a "press down" effect when any button is clicked */
+#exportAllBtn:active, #importAllBtn:active, #toggleAllBtn:active, #clearNotesBtn:active, #signInBtn:active, #signOutBtn:active {
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+}
+
+/* --- Specific color overrides for each button --- */
+#exportAllBtn {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    border-bottom-color: var(--success-hover-color); /* Darker bottom border */
+    color: white;
+}
 #exportAllBtn:hover { background-color: var(--success-hover-color); }
-#importAllBtn { border-color: var(--success-color); color: var(--success-color); }
+
+#importAllBtn {
+    background-color: var(--surface-hover);
+    border-color: var(--success-color);
+    border-bottom-color: var(--success-hover-color);
+    color: var(--success-color);
+}
 #importAllBtn:hover { background-color: var(--success-color); color: white; }
-#toggleAllBtn { background-color: var(--accent-color); color: #fff; border-color: var(--accent-color); }
+
+#toggleAllBtn {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    border-bottom-color: var(--accent-hover-color);
+    color: #fff;
+}
 #toggleAllBtn:hover { background-color: var(--accent-hover-color); }
-#clearNotesBtn { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+
+#clearNotesBtn {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    border-bottom-color: var(--danger-hover-color);
+    color: white;
+}
 #clearNotesBtn:hover { background-color: var(--danger-hover-color); }
+
+/* NEW: Style for Google Sign In button */
+#signInBtn {
+    background-color: #fff;
+    border-color: #ddd;
+    border-bottom-color: #ccc;
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#signInBtn:hover { background-color: #f0f0f0; }
+#signInBtn .google-logo {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+    height: auto;
+}
+#signInBtn .google-logo svg {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    display: block;
+}
+#signInBtn span,
+#signInBtn .google-logo {
+    line-height: 1;
+}
+
+/* NEW: Styles for user info and sign out button */
+#userInfo { align-items: center; gap: 10px; }
+#userName { color: #fff; font-size: 1em; font-weight: 500; white-space: nowrap; }
+
+#signOutBtn {
+    background-color: var(--surface-hover);
+    border-color: var(--danger-color);
+    border-bottom-color: var(--danger-hover-color);
+    color: var(--danger-color);
+    padding: 6px 10px;
+}
+#signOutBtn:hover { background-color: var(--danger-color); color: white; }
+
 #searchInput { width: 100%; padding: 12px 15px; font-size: 16px; background-color: var(--surface-color); color: var(--primary-text-color); border: 1px solid var(--border-color); border-radius: 8px; transition: border-color 0.3s, box-shadow 0.3s; }
 #searchInput:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px var(--shadow-color); }
 
+
 /* --- Collapsible Topic Sections --- */
-.specialty-section {
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background-color: var(--surface-color);
-    overflow: hidden;
+.specialty-section { margin-bottom: 10px; border-radius: 8px; background-color: var(--surface-color); overflow: hidden; border: 1px solid var(--border-color); }
+.topic-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; cursor: pointer; transition: background-color 0.2s; }
+.topic-header:hover { background-color: var(--surface-hover); }
+.topic-title { font-size: 1.3em; color: var(--primary-text-color); margin: 0; flex-grow: 1; }
+.topic-actions { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+.topic-actions .action-buttons { display: flex; gap: 8px; }
+.topic-actions button { background-color: transparent; border: 1px solid var(--border-color); color: var(--secondary-text-color); border-radius: 5px; padding: 5px 8px; font-size: 0.8em; cursor: pointer; transition: all 0.2s ease; }
+.topic-actions button:hover { color: var(--primary-text-color); border-color: var(--accent-color); background-color: var(--surface-hover); }
+.topic-toggle-btn { background: transparent; border: none; color: var(--secondary-text-color); cursor: pointer; padding: 5px; font-size: 1em; line-height: 1; transition: transform 0.3s ease-out; transform: rotate(-90deg); }
+.specialty-section.active .topic-toggle-btn { transform: rotate(0deg); }
+.topic-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; padding: 0 20px; }
+.specialty-section.active .topic-content { max-height: 50000px; transition: max-height 1s ease-in-out; padding-bottom: 20px; }
+
+/* --- Question Cards & Utilities --- */
+.question-card {
+    background-color: var(--bg-color);
     border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-top: 15px;
+    overflow: hidden;
+    /* Remove any fixed height or min-height */
+    height: auto;
+    min-height: unset;
+    box-sizing: border-box;
+    /* Optional: add margin-bottom for spacing between cards */
+    margin-bottom: 10px;
 }
-.topic-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
+
+.question-header {
+    padding: 16px 20px; /* Slightly less padding for compactness */
     cursor: pointer;
     transition: background-color 0.2s;
-}
-.topic-header:hover {
-    background-color: var(--surface-hover);
-}
-.topic-title {
-    font-size: 1.5em;
-    color: var(--primary-text-color);
-    margin: 0;
-    flex-grow: 1; /* Title takes up available space */
-}
-/* *** REMOVED ::after pseudo-element from here *** */
-
-/* *** NEW: Container for all right-side actions, including toggle *** */
-.topic-actions {
+    /* Remove any fixed height or min-height */
+    height: auto;
+    min-height: unset;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 15px; /* Spacing between toggle and export button */
-    flex-shrink: 0;
-}
-.topic-actions .action-buttons {
-    display: flex;
-    gap: 8px; /* Spacing between export and import */
-}
-.topic-actions button {
-    background-color: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--secondary-text-color);
-    border-radius: 5px;
-    padding: 5px 8px;
-    font-size: 0.8em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.topic-actions button:hover {
-    color: var(--primary-text-color);
-    border-color: var(--accent-color);
-    background-color: var(--surface-hover);
-}
-/* *** NEW: Dedicated style for the toggle button *** */
-.topic-toggle-btn {
-    background: transparent;
-    border: none;
-    color: var(--secondary-text-color);
-    cursor: pointer;
-    padding: 5px;
-    font-size: 1em; /* Adjust size as needed */
-    line-height: 1;
-    transition: transform 0.3s ease-out;
-    transform: rotate(-90deg); /* Starts as ▶ */
-}
-.specialty-section.active .topic-toggle-btn {
-    transform: rotate(0deg); /* Animates to ▼ */
+    /* Allow wrapping for long questions */
+    flex-wrap: wrap;
 }
 
-.topic-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease-out;
-    padding: 0 20px;
-}
-.specialty-section.active .topic-content {
-    max-height: 50000px;
-    transition: max-height 1s ease-in-out;
-    padding-bottom: 20px;
+.question-text {
+    font-size: 1.1em;
+    margin-bottom: 0;
+    font-weight: 500;
+    /* Remove forced line breaks, allow wrapping */
+    white-space: normal;
+    word-break: break-word;
 }
 
-/* --- Question Cards & Utilities (Unchanged) --- */
-.question-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; margin-top: 15px; overflow: hidden; }
-.question-header { padding: 20px; cursor: pointer; transition: background-color 0.2s; }
-.question-card.active .question-header, .question-header:hover { background-color: var(--surface-hover); }
-.question-text { font-size: 1.1em; margin-bottom: 10px; font-weight: 500; }
 .answer-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0 20px; }
 .question-card.active .answer-content { max-height: 1000px; padding: 0 20px 20px 20px; transition: max-height 0.5s ease-in, padding 0.5s ease-in; }
 .note-box { width: 100%; min-height: 120px; padding: 12px; font-size: 1em; background-color: #0c0c0c; color: var(--primary-text-color); border: 1px solid var(--border-color); border-radius: 6px; resize: vertical; font-family: inherit; }
@@ -154,7 +214,7 @@ mark { background-color: var(--highlight-bg); color: var(--highlight-text); padd
 #backToTopBtn { position: fixed; bottom: 20px; right: 20px; background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: opacity 0.3s, transform 0.3s; opacity: 0; transform: translateY(10px); z-index: 1000; }
 #backToTopBtn.show { display: flex; opacity: 1; transform: translateY(0); }
 
-/* --- Desktop Styles (Unchanged) --- */
+/* --- Desktop Styles --- */
 @media (min-width: 992px) {
     body { padding-left: var(--sidebar-width); }
     .container { padding: 40px 20px; }
@@ -165,5 +225,5 @@ mark { background-color: var(--highlight-bg); color: var(--highlight-text); padd
     .header-buttons { width: auto; }
 }
 
-/* --- Print Styles (Unchanged) --- */
+/* --- Print Styles --- */
 @media print { /* ... print styles ... */ }
