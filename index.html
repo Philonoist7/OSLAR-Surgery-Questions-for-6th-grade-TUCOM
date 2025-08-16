@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSLER Surgery Questions</title>
+    <title>OSLER Questions</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,15 +13,19 @@
     <!-- Link to your CSS file -->
     <link rel="stylesheet" href="style.css">
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
     <!-- IMPORTANT: Load questions first, then the main script -->
-      <script src="questions.js?v=1.1" defer></script>
-    <script src="main.js?v=1.1" defer></script>
+    <script src="questions.js" defer></script>
+    <script src="main.js" defer></script>
 </head>
 <body>
 
     <div id="overlay"></div>
 
-    <!-- Floating Navigation Sidebar -->
     <nav class="sidebar">
         <h2 class="sidebar-title">Surgical Topics</h2>
         <div class="sidebar-nav">
@@ -39,8 +43,32 @@
                     <span class="bar"></span>
                     <span class="bar"></span>
                 </button>
-                <h1>OSLER Surgery Questions</h1>
+                <h1>OSLER Questions</h1>
                 <div class="header-buttons">
+
+                    <!-- CORRECTED: Authentication Buttons -->
+                    <div id="userInfo" style="display: none; align-items: center; gap: 10px;">
+                        <span id="userName"></span>
+                        <button id="signOutBtn" title="Sign Out">Sign Out</button>
+                    </div>
+                    
+                    <!-- IMPROVED: Sign in button with a reliable SVG Google logo -->
+                    <button id="signInBtn" title="Sign in with Google to sync your notes">
+                        <span class="google-logo" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 48 48">
+                                <g>
+                                    <path fill="#4285F4" d="M24 9.5c3.54 0 6.72 1.23 9.23 3.25l6.9-6.9C36.13 2.34 30.45 0 24 0 14.61 0 6.26 5.48 2.13 13.44l8.06 6.27C12.74 13.19 17.93 9.5 24 9.5z"/>
+                                    <path fill="#34A853" d="M46.09 24.56c0-1.61-.14-3.17-.39-4.67H24v9.07h12.41c-.54 2.91-2.17 5.38-4.63 7.04l7.19 5.59C43.98 37.15 46.09 31.37 46.09 24.56z"/>
+                                    <path fill="#FBBC05" d="M10.19 28.71c-.56-1.67-.88-3.44-.88-5.21s.32-3.54.88-5.21l-8.06-6.27C.74 15.97 0 19.87 0 24s.74 8.03 2.13 11.98l8.06-6.27z"/>
+                                    <path fill="#EA4335" d="M24 48c6.45 0 11.87-2.13 15.83-5.81l-7.19-5.59c-2.01 1.35-4.59 2.15-8.64 2.15-6.07 0-11.26-3.69-13.81-8.98l-8.06 6.27C6.26 42.52 14.61 48 24 48z"/>
+                                    <path fill="none" d="M0 0h48v48H0z"/>
+                                </g>
+                            </svg>
+                        </span>
+                       
+                    </button>
+                    
+                    <!-- CORRECTED: Other buttons are now siblings, not children -->
                     <button id="exportAllBtn" title="Export all notes to a file">Export All</button>
                     <button id="importAllBtn" title="Import notes from a file">Import All</button>
                     <button id="toggleAllBtn" title="Expand/Collapse All Topics">Toggle All</button>
@@ -48,12 +76,11 @@
                 </div>
             </div>
             <input type="text" id="searchInput" placeholder="Type to search questions or topics...">
-            <!-- Hidden file input for all import functionality -->
             <input type="file" id="importFileInput" style="display: none;" accept=".json">
         </header>
 
         <main id="questionsContainer">
-            <!-- Sections and their topic-specific buttons will be dynamically populated by main.js -->
+            <!-- Dynamically populated by main.js -->
         </main>
     </div>
 
