@@ -37,7 +37,7 @@ function saveNotesToLocalStorage(notes) {
 
 function autoResizeNoteBox(textarea) {
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 400) + 'px';
+    textarea.style.height = Math.min(textarea.scrollHeight, textarea.scrollHeight) + 'px';
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 box.placeholder = "Your answer and notes here...";
                 const id = box.closest('.question-card').dataset.questionId;
                 box.value = userNotes[id] || '';
+                autoResizeNoteBox(box); // <-- Ensure correct height after value set
             });
         } else {
             currentUser = null;
@@ -172,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 box.placeholder = "Your answer and notes here...";
                 const id = box.closest('.question-card').dataset.questionId;
                 box.value = userNotes[id] || '';
+                autoResizeNoteBox(box); // <-- Ensure correct height after value set
             });
         }
     });
@@ -244,8 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
             saveNote(e.target);
             autoResizeNoteBox(e.target);
         });
-        // Initial resize for pre-filled notes
-        autoResizeNoteBox(box);
+        autoResizeNoteBox(box); // <-- Initial resize for pre-filled notes
     });
 
     // --- Dynamic Content Event Listener ---
