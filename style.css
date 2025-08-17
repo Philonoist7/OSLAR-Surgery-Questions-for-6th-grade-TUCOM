@@ -208,11 +208,44 @@ h1 { color: var(--primary-text-color); font-weight: 600; font-size: 1.5em; order
 
 .answer-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease-out; padding: 0 20px; }
 .question-card.active .answer-content { max-height: 1000px; padding: 0 20px 20px 20px; transition: max-height 0.5s ease-in, padding 0.5s ease-in; }
-.note-box { width: 100%; min-height: 120px; padding: 12px; font-size: 1em; background-color: #0c0c0c; color: var(--primary-text-color); border: 1px solid var(--border-color); border-radius: 6px; resize: vertical; font-family: inherit; }
-.note-box:focus { outline: none; border-color: var(--accent-color); }
+.note-box {
+    width: 100%;
+    min-height: 50px;
+    max-height: 400px;
+    height: auto;
+    padding: 12px;
+    font-size: 1em;
+    background-color: #0c0c0c;
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+    overflow-y: auto;
+    box-sizing: border-box;
+    transition: min-height 0.2s;
+}
 mark { background-color: var(--highlight-bg); color: var(--highlight-text); padding: 1px 2px; border-radius: 3px; }
 #backToTopBtn { position: fixed; bottom: 20px; right: 20px; background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: opacity 0.3s, transform 0.3s; opacity: 0; transform: translateY(10px); z-index: 1000; }
 #backToTopBtn.show { display: flex; opacity: 1; transform: translateY(0); }
+
+/* --- Copy Question Button --- */
+.copy-question-btn {
+    background: var(--surface-hover);
+    color: var(--accent-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-left: 12px;
+    transition: background 0.2s, color 0.2s;
+}
+.copy-question-btn:hover {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
 
 /* --- Desktop Styles --- */
 @media (min-width: 992px) {

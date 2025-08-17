@@ -35,6 +35,11 @@ function saveNotesToLocalStorage(notes) {
 // --- END FIREBASE SETUP ---
 // --- END FIREBASE SETUP ---
 
+function autoResizeNoteBox(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 400) + 'px';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Get references
     const questionsContainer = document.getElementById('questionsContainer');
@@ -115,8 +120,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function buildQuestionHTML(q) {
-        let questionTextHTML = Array.isArray(q.text) ? q.text.map(line => `<p class="question-text">${line}</p>`).join('') : `<p class="question-text">${q.text}</p>`;
-        return `<div class="question-card" data-question-id="${q.id}"><div class="question-header">${q.caseHeader ? `<p class="case-header">${q.caseHeader}</p>` : ''}${questionTextHTML}${q.doctors ? `<p class="doctors">${q.doctors}</p>` : ''}</div><div class="answer-content"><textarea class="note-box" placeholder="Sign in to save notes..." disabled></textarea></div></div>`;
+        let questionTextHTML = Array.isArray(q.text)
+            ? q.text.map(line => `<p class="question-text">${line}</p>`).join('')
+            : `<p class="question-text">${q.text}</p>`;
+        // Add a copy button beside the question header
+        return `<div class="question-card" data-question-id="${q.id}">
+            <div class="question-header">
+                ${q.caseHeader ? `<p class="case-header">${q.caseHeader}</p>` : ''}
+                ${questionTextHTML}
+                ${q.doctors ? `<p class="doctors">${q.doctors}</p>` : ''}
+                <button class="copy-question-btn" title="Copy question" style="margin-left:auto;">Copy</button>
+            </div>
+            <div class="answer-content">
+                <textarea class="note-box" placeholder="Your answer and notes here..."></textarea>
+            </div>
+        </div>`;
     }
 
     // --- Firebase Auth & Firestore Functions ---
@@ -220,16 +238,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Run Page Setup ---
     populatePage();
-    // FIXED: Define allNoteBoxes *after* populatePage() creates them.
     const allNoteBoxes = document.querySelectorAll('.note-box');
-    // FIXED: Attach event listener for saving notes *after* boxes are defined.
     allNoteBoxes.forEach(box => {
-        box.addEventListener('input', (e) => saveNote(e.target));
+        box.addEventListener('input', (e) => {
+            saveNote(e.target);
+            autoResizeNoteBox(e.target);
+        });
+        // Initial resize for pre-filled notes
+        autoResizeNoteBox(box);
     });
 
     // --- Dynamic Content Event Listener ---
     questionsContainer.addEventListener('click', (e) => {
         const target = e.target;
+        // Copy button handler
+        if (target.classList.contains('copy-question-btn')) {
+            const header = target.closest('.question-header');
+            // Get all question text inside this header
+            let text = '';
+            header.querySelectorAll('.question-text, .case-header, .doctors').forEach(el => {
+                text += el.textContent + '\n';
+            });
+            // Copy to clipboard
+            navigator.clipboard.writeText(text.trim()).then(() => {
+                target.textContent = '✅ Copied!';
+                setTimeout(() => { target.textContent = 'Copy'; }, 1200);
+            });
+            e.stopPropagation();
+            return;
+        }
         const questionHeader = target.closest('.question-header');
         if (questionHeader) {
             questionHeader.closest('.question-card').classList.toggle('active');
