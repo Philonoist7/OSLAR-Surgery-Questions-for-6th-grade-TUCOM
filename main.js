@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let questionTextHTML = Array.isArray(q.text)
             ? q.text.map(line => `<p class="question-text">${line}</p>`).join('')
             : `<p class="question-text">${q.text}</p>`;
-        // Add a copy button beside the question header
+    
         return `<div class="question-card" data-question-id="${q.id}">
             <div class="question-header">
                 ${q.caseHeader ? `<p class="case-header">${q.caseHeader}</p>` : ''}
@@ -122,10 +122,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button class="copy-question-btn" title="Copy question" style="margin-left:auto;">Copy</button>
             </div>
             <div class="answer-content">
-                <textarea class="note-box" placeholder="Sign in to save notes..." disabled></textarea>
+            
+            <div class="editor-toolbar">
+                   
+                    <button class="format-btn" data-command="insertUnorderedList" title="Bulleted List">Bullet •••</button>
+                    <button class="format-btn" data-command="insertOrderedList" title="Numbered List">Numbering</button>
+                </div>
+
+                <div class="note-box" contenteditable="false" data-placeholder="Sign in to save notes..."></div>
             </div>
         </div>`;
     }
+
+    //  <button class="format-btn" data-command="bold" title="Bold"><b>Bold</b></button>
+    // <button class="format-btn" data-command="italic" title="Italic"><i>Italic</i></button>
 
     // --- Firebase Auth & Firestore Functions ---
     auth.onAuthStateChanged(async user => {
@@ -145,10 +155,9 @@ document.addEventListener('DOMContentLoaded', function () {
             userInfo.style.display = 'none';
             signInBtn.style.display = 'block';
             document.querySelectorAll('.note-box').forEach(box => {
-                box.value = '';
-                box.disabled = true;
-                box.placeholder = "Sign in to save notes...";
-                autoResizeNoteBox(box); // Reset size
+                box.innerHTML = '';
+                box.setAttribute('contenteditable', 'false');
+                box.dataset.placeholder = "Sign in to save notes...";
             });
         }
     });
@@ -171,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
             userNotes = (doc.exists && doc.data().notes) ? doc.data().notes : {};
             document.querySelectorAll('.note-box').forEach(box => {
                 const id = box.closest('.question-card').dataset.questionId;
-                box.value = userNotes[id] || '';
+                box.innerHTML = userNotes[id] || '';
                 autoResizeNoteBox(box);
             });
         } catch (error) {
@@ -182,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function saveNote(element) {
         if (!currentUser) return;
         const questionId = element.closest('.question-card').dataset.questionId;
-        const noteText = element.value;
+        const noteText = element.innerHTML;
         userNotes[questionId] = noteText;
         try {
             const userNotesRef = db.collection('users').doc(currentUser.uid);
@@ -211,17 +220,116 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Run Page Setup ---
     populatePage();
-    const allNoteBoxes = document.querySelectorAll('.note-box');
-    allNoteBoxes.forEach(box => {
-        box.addEventListener('input', (e) => {
-            saveNote(e.target);
-            autoResizeNoteBox(e.target);
-        });
-        autoResizeNoteBox(box); // <-- Initial resize for pre-filled notes
-    });
 
-    // --- Dynamic Content Event Listener ---
-    questionsContainer.addEventListener('click', (e) => {
+// Setup rich text editor functionality
+document.addEventListener('click', function(e) {
+    if (e.target.matches('.format-btn')) {
+        e.preventDefault();
+        const command = e.target.dataset.command;
+        const noteBox = e.target.closest('.answer-content').querySelector('.note-box');
+        
+        if (noteBox.getAttribute('contenteditable') === 'true') {
+            document.execCommand(command, false, null);
+            noteBox.focus();
+            autoResizeNoteBox(noteBox);
+            saveNote(noteBox);
+        }
+    }
+});
+
+// Handle input events for auto-resize
+document.addEventListener('input', function(e) {
+    if (e.target.matches('.note-box[contenteditable="true"]')) {
+        autoResizeNoteBox(e.target);
+        saveNote(e.target);
+    }
+});
+
+// Handle paste events to preserve formatting
+document.addEventListener('paste', function(e) {
+    if (!e.target.matches('.note-box[contenteditable="true"]')) return;
+    
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain');
+    
+    if (e.clipboardData.types.includes('text/html')) {
+        // Create a temporary div to sanitize HTML
+        const temp = document.createElement('div');
+        temp.innerHTML = text;
+        
+        // Remove potentially dangerous elements and attributes
+        const safe = sanitizeHTML(temp);
+        document.execCommand('insertHTML', false, safe);
+    } else {
+        document.execCommand('insertText', false, text);
+    }
+    
+    // Force all text to be white after paste
+    const noteBox = e.target;
+    Array.from(noteBox.getElementsByTagName('*')).forEach(el => {
+        el.style.color = 'var(--primary-text-color)';
+    });
+    
+    // Add auto-resize after paste
+    setTimeout(() => autoResizeNoteBox(e.target), 0);
+    saveNote(e.target);
+});
+
+function sanitizeHTML(element) {
+    // Remove script tags and on* attributes
+    const scripts = element.getElementsByTagName('script');
+    while (scripts[0]) scripts[0].parentNode.removeChild(scripts[0]);
+    
+    // Remove style tags
+    const styles = element.getElementsByTagName('style');
+    while (styles[0]) styles[0].parentNode.removeChild(styles[0]);
+    
+    // Clean all elements
+    const all = element.getElementsByTagName('*');
+    for (let i = 0; i < all.length; i++) {
+        const el = all[i];
+        // Remove all attributes except basic formatting
+        const attrs = Array.from(el.attributes);
+        attrs.forEach(attr => {
+            if (!['href', 'target'].includes(attr.name)) {
+                el.removeAttribute(attr.name);
+            }
+        });
+        // Force white color
+        el.style.color = 'var(--primary-text-color)';
+    }
+    
+    return element.innerHTML;
+}
+
+// Update auth state change handler
+auth.onAuthStateChanged(async user => {
+    if (user) {
+        currentUser = user;
+        userInfo.style.display = 'flex';
+        userName.textContent = currentUser.displayName;
+        signInBtn.style.display = 'none';
+        document.querySelectorAll('.note-box').forEach(box => {
+            box.disabled = false;
+            box.setAttribute('contenteditable', 'true');
+            box.dataset.placeholder = "Your answer and notes here...";
+        });
+        await loadNotesFromFirestore();
+    } else {
+        currentUser = null;
+        userNotes = {};
+        userInfo.style.display = 'none';
+        signInBtn.style.display = 'block';
+        document.querySelectorAll('.note-box').forEach(box => {
+            box.innerHTML = '';
+            box.setAttribute('contenteditable', 'false');
+            box.dataset.placeholder = "Sign in to save notes...";
+        });
+    }
+});
+
+// --- Dynamic Content Event Listener ---
+questionsContainer.addEventListener('click', (e) => {
         const target = e.target;
         // Copy button handler
         if (target.classList.contains('copy-question-btn')) {
