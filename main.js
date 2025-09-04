@@ -20,17 +20,7 @@ let currentUser = null; // Variable to hold the current user object
 let userNotes = {};     // In-memory cache of the user's notes
 
 // --- Utility: Local Storage for notes ---
-function loadNotesFromLocalStorage() {
-    try {
-        const notes = localStorage.getItem('osler_notes');
-        return notes ? JSON.parse(notes) : {};
-    } catch {
-        return {};
-    }
-}
-function saveNotesToLocalStorage(notes) {
-    localStorage.setItem('osler_notes', JSON.stringify(notes));
-}
+// Local storage functions are no longer needed and have been removed.
 
 // --- END FIREBASE SETUP ---
 // --- END FIREBASE SETUP ---
@@ -132,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button class="copy-question-btn" title="Copy question" style="margin-left:auto;">Copy</button>
             </div>
             <div class="answer-content">
-                <textarea class="note-box" placeholder="Your answer and notes here..."></textarea>
+                <textarea class="note-box" placeholder="Sign in to save notes..." disabled></textarea>
             </div>
         </div>`;
     }
@@ -144,36 +134,21 @@ document.addEventListener('DOMContentLoaded', function () {
             userInfo.style.display = 'flex';
             userName.textContent = currentUser.displayName;
             signInBtn.style.display = 'none';
-
-            // Load notes from Firestore and merge with local notes
-            const cloudNotes = await getNotesFromFirestore();
-            const localNotes = loadNotesFromLocalStorage();
-            // Merge: local notes overwrite cloud notes if present
-            userNotes = { ...cloudNotes, ...localNotes };
-            // Save merged notes to Firestore
-            await saveAllNotesToFirestore(userNotes);
-            // Save merged notes to localStorage
-            saveNotesToLocalStorage(userNotes);
-
             document.querySelectorAll('.note-box').forEach(box => {
                 box.disabled = false;
                 box.placeholder = "Your answer and notes here...";
-                const id = box.closest('.question-card').dataset.questionId;
-                box.value = userNotes[id] || '';
-                autoResizeNoteBox(box); // <-- Ensure correct height after value set
             });
+            await loadNotesFromFirestore();
         } else {
             currentUser = null;
+            userNotes = {};
             userInfo.style.display = 'none';
             signInBtn.style.display = 'block';
-            // Load notes from localStorage
-            userNotes = loadNotesFromLocalStorage();
             document.querySelectorAll('.note-box').forEach(box => {
-                box.disabled = false;
-                box.placeholder = "Your answer and notes here...";
-                const id = box.closest('.question-card').dataset.questionId;
-                box.value = userNotes[id] || '';
-                autoResizeNoteBox(box); // <-- Ensure correct height after value set
+                box.value = '';
+                box.disabled = true;
+                box.placeholder = "Sign in to save notes...";
+                autoResizeNoteBox(box); // Reset size
             });
         }
     });
@@ -188,53 +163,49 @@ document.addEventListener('DOMContentLoaded', function () {
 
     signOutBtn.addEventListener('click', () => auth.signOut());
 
-    async function getNotesFromFirestore() {
-        if (!currentUser) return {};
-        try {
-            const userNotesRef = db.collection('users').doc(currentUser.uid);
-            const doc = await userNotesRef.get();
-            return (doc.exists && doc.data().notes) ? doc.data().notes : {};
-        } catch {
-            return {};
-        }
-    }
-
-    async function saveAllNotesToFirestore(notes) {
+    async function loadNotesFromFirestore() {
         if (!currentUser) return;
         try {
             const userNotesRef = db.collection('users').doc(currentUser.uid);
-            await userNotesRef.set({ notes }, { merge: true });
+            const doc = await userNotesRef.get();
+            userNotes = (doc.exists && doc.data().notes) ? doc.data().notes : {};
+            document.querySelectorAll('.note-box').forEach(box => {
+                const id = box.closest('.question-card').dataset.questionId;
+                box.value = userNotes[id] || '';
+                autoResizeNoteBox(box);
+            });
         } catch (error) {
-            console.error("Error saving notes:", error);
+            console.error("Error loading notes:", error);
         }
     }
 
     async function saveNote(element) {
+        if (!currentUser) return;
         const questionId = element.closest('.question-card').dataset.questionId;
         const noteText = element.value;
         userNotes[questionId] = noteText;
-        saveNotesToLocalStorage(userNotes);
-        if (currentUser) {
-            await saveAllNotesToFirestore(userNotes);
+        try {
+            const userNotesRef = db.collection('users').doc(currentUser.uid);
+            await userNotesRef.set({ notes: { [questionId]: noteText } }, { merge: true });
+        } catch (error) {
+            console.error("Error saving note:", error);
         }
     }
 
     function clearAllNotes() {
-        // Clear both localStorage and Firestore
-        if (confirm('Are you sure you want to delete ALL your saved notes? This action cannot be undone.')) {
-            userNotes = {};
-            saveNotesToLocalStorage(userNotes);
-            document.querySelectorAll('.note-box').forEach(box => box.value = '');
-            if (currentUser) {
-                const userNotesRef = db.collection('users').doc(currentUser.uid);
-                userNotesRef.set({ notes: {} })
-                    .then(() => {
-                        alert('All your notes have been cleared.');
-                    })
-                    .catch(error => console.error("Error clearing notes:", error));
-            } else {
-                alert('All your notes have been cleared.');
-            }
+        if (!currentUser) return alert("You must be signed in to clear notes.");
+        if (confirm('Are you sure you want to delete ALL your saved notes from the cloud? This action cannot be undone.')) {
+            const userNotesRef = db.collection('users').doc(currentUser.uid);
+            userNotesRef.set({ notes: {} })
+                .then(() => {
+                    userNotes = {};
+                    document.querySelectorAll('.note-box').forEach(box => {
+                        box.value = '';
+                        autoResizeNoteBox(box);
+                    });
+                    alert('All your notes have been cleared.');
+                })
+                .catch(error => console.error("Error clearing notes:", error));
         }
     }
 
@@ -303,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function handleGlobalExport() {
-        // FIXED: Use the 'userNotes' object instead of localStorage.
         if (!currentUser) return alert("Please sign in to export your notes.");
         if (Object.keys(userNotes).length === 0) return alert('No notes found to export.');
 
@@ -320,7 +290,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleTopicExport(topicId) {
-        // FIXED: Use the 'userNotes' object instead of localStorage.
         if (!currentUser) return alert("Please sign in to export your notes.");
         if (!topicId || !allQuestionsData[topicId]) return;
 
@@ -340,7 +309,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const dataToExport = { topicId: topicId, topicTitle: topicData.title, notes: notes };
         const jsonString = JSON.stringify(dataToExport, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
-        // ... (rest of the export logic is fine)
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -358,7 +326,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                // FIXED: This line was missing. It's crucial.
                 const importedData = JSON.parse(e.target.result);
                 
                 if (currentTopicForImport) {
